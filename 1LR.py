@@ -241,7 +241,7 @@ def task_5(H: int, W: int):
     print("Отрисовка вершин трёхмерной модели")
     points = task_4()
     my_image = Image_class(H + 1, W + 1)
-    my_image.update_matrix(points)
+    # my_image.update_matrix(points)
     # my_image.show()
     return my_image, points
 
@@ -356,8 +356,8 @@ def task_9_1(Points, matrix):
     r = random.randint(0, 255)
     g = random.randint(0, 255)
     b = random.randint(0, 255)
-    for x in range(int(xmin), int(xmax)):
-        for y in range(int(ymin), int(ymax)):
+    for x in range(int(xmin), int(xmax)+1):
+        for y in range(int(ymin), int(ymax)+1):
             if task_8(Points, x, y):
                 # print("Подходит")
                 matrix[x][y] = [r, g, b]
@@ -370,8 +370,8 @@ def task_9_2(Points, matrix, n):
     ymax = max(Points[0].y, Points[1].y, Points[2].y)
     # print(xmin, " ", xmax," ",ymax," ",ymin)
 
-    for x in range(int(xmin), int(xmax)):
-        for y in range(int(ymin), int(ymax)):
+    for x in range(int(xmin), int(xmax)+1):
+        for y in range(int(ymin), int(ymax)+1):
             if task_8(Points, x, y):
                 # print("Подходит")
                 matrix[x][y] = [255 * n, 0, 0]
@@ -384,8 +384,8 @@ def task_9_3(Points, matrix, n, z,l):
     ymax = max(Points[0].y, Points[1].y, Points[2].y)
     # print(xmin, " ", xmax," ",ymax," ",ymin)
 
-    for x in range(int(xmin), int(xmax)):
-        for y in range(int(ymin), int(ymax)):
+    for x in range(int(xmin), int(xmax)+1):
+        for y in range(int(ymin), int(ymax)+1):
             l1, l2, l3 = task_8(Points,x,y,False)
             if task_8(Points, x, y):
                 cur_z = Points[0].z * l1 + Points[1].z * l2 + Points[2].z * l3
@@ -400,11 +400,11 @@ def task_11(H=1000, W=1000):
     my_image, points = task_5(H, W)
     points = task_4_1()
     array = task_6()
-    for i in array:
-        for j in range(len(i) - 1):
-            for k in range(j, len(i)):
-                if i[j] != i[k]:
-                    task_7_1(points[i[j]].x, points[i[k]].x, points[i[j]].y, points[i[k]].y, my_image)
+    # for i in array:
+    #     for j in range(len(i) - 1):
+    #         for k in range(j, len(i)):
+    #             if i[j] != i[k]:
+    #                 task_7_1(points[i[j]].x, points[i[k]].x, points[i[j]].y, points[i[k]].y, my_image)
     for i in array:
         triangle = []
         for j in i:
@@ -433,11 +433,12 @@ def task_13(H=1000, W=1000):
     #         for k in range(j, len(i)):
     #             if i[j] != i[k]:
     #                 task_7_1(points[i[j]].x, points[i[k]].x, points[i[j]].y, points[i[k]].y, my_image)
+
     for i in array:
         triangle = []
         for j in i:
             triangle.append(points[j])
-        if np.dot(task_12(triangle), l) < 0:
+        if np.dot(task_12(triangle), l) < 0.0:
             task_9_1(triangle, my_image.matrix)
 
     my_image.show("task_13")
@@ -481,4 +482,4 @@ def task_15(H=1000, W=1000):
 
 
 if __name__ == "__main__":
-    task_15()
+    task_14()
