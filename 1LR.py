@@ -7,7 +7,7 @@ import re
 
 
 class Point:
-    def __init__(self, x, y, z=0):
+    def __init__(self, x, y, z=0.0):
         self._x = x
         self._y = y
         self._z = z
@@ -46,6 +46,15 @@ class Point:
     def swap(self):
         self._x, self._y = self._y, self._x
 
+    def to_vec(self):
+        return np.array([self._x, self._y, self._z]).reshape(3, 1)
+
+    def update_point(self, new_point):
+        self._x = float(new_point[0])
+        self._y = float(new_point[1])
+        # self._z = 1.0
+        # self._z = float(new_point[2])
+
 
 class Image_class:
     def __init__(self, H=1000, W=1000, color=(0, 0, 0)):
@@ -64,7 +73,7 @@ class Image_class:
 
     def update_matrix(self, Points):
         for point in Points:
-            self.matrix[point.x][point.y] = 255
+            self.matrix[int(point.x)][int(point.y)] = 255
 
 
 def task_1_1(H=1000, W=1000):
@@ -356,8 +365,8 @@ def task_9_1(Points, matrix):
     r = random.randint(0, 255)
     g = random.randint(0, 255)
     b = random.randint(0, 255)
-    for x in range(int(xmin), int(xmax)+1):
-        for y in range(int(ymin), int(ymax)+1):
+    for x in range(int(xmin), int(xmax) + 1):
+        for y in range(int(ymin), int(ymax) + 1):
             if task_8(Points, x, y):
                 # print("Подходит")
                 matrix[x][y] = [r, g, b]
@@ -370,30 +379,30 @@ def task_9_2(Points, matrix, n):
     ymax = max(Points[0].y, Points[1].y, Points[2].y)
     # print(xmin, " ", xmax," ",ymax," ",ymin)
 
-    for x in range(int(xmin), int(xmax)+1):
-        for y in range(int(ymin), int(ymax)+1):
+    for x in range(int(xmin), int(xmax) + 1):
+        for y in range(int(ymin), int(ymax) + 1):
             if task_8(Points, x, y):
                 # print("Подходит")
                 matrix[x][y] = [255 * n, 0, 0]
 
 
-def task_9_3(Points, matrix, n, z,l):
+def task_9_3(Points, matrix, n, z, l):
     xmin = min(Points[0].x, Points[1].x, Points[2].x)
     xmax = max(Points[0].x, Points[1].x, Points[2].x)
     ymin = min(Points[0].y, Points[1].y, Points[2].y)
     ymax = max(Points[0].y, Points[1].y, Points[2].y)
     # print(xmin, " ", xmax," ",ymax," ",ymin)
 
-    for x in range(int(xmin), int(xmax)+1):
-        for y in range(int(ymin), int(ymax)+1):
-            l1, l2, l3 = task_8(Points,x,y,False)
-            if task_8(Points, x, y):
+    for x in range(int(xmin), int(xmax) + 1):
+        for y in range(int(ymin), int(ymax) + 1):
+            l1, l2, l3 = task_8(Points, x, y, False)
+            if task_8(Points, x, y) and 0 <= x < 1000 and 0 <= y < 1000:
                 cur_z = Points[0].z * l1 + Points[1].z * l2 + Points[2].z * l3
                 if cur_z < z[x, y]:
                     z[x, y] = cur_z
                     n = -np.dot(task_12(Points), l)
-            #     # print("Подходит")
-                    matrix[x][y] = [255 * n, 0, 0]
+                    #     # print("Подходит")
+                    matrix[1000 - x][y] = [255 * n, 0, 0]
 
 
 def task_11(H=1000, W=1000):
@@ -417,6 +426,7 @@ def task_12(Points):
     a = [Points[1].x - Points[0].x, Points[1].y - Points[0].y, Points[1].z - Points[0].z]
     b = [Points[1].x - Points[2].x, Points[1].y - Points[2].y, Points[1].z - Points[2].z]
     c = a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - b[0] * a[1]
+    # print(c)
     return (c / np.linalg.norm(c))
     # points = task_4_1()
     # for point in points:
@@ -471,15 +481,108 @@ def task_15(H=1000, W=1000):
     z = np.full((1000, 1000), 10 ** 10)
     points = task_4_1()
     array = task_6()
+
     for i in array:
         triangle = []
         for j in i:
             triangle.append(points[j])
         n = np.dot(task_12(triangle), l)
         if n < 0:
-            task_9_3(triangle, my_image.matrix, n, z,l)
+            task_9_3(triangle, my_image.matrix, n, z, l)
     my_image.show("task_15")
 
 
+def task_16_1():
+    f = open('african_head.obj', 'r')
+    lines = f.read()
+    Points = []
+    for line in lines.split('\n'):
+        try:
+            v, x, y, z = re.split('\s+', line)
+        except:
+            continue
+        if v == 'v':
+            x = float(x) + 1
+            y = float(y) + 1
+            z = float(z) + 21
+            Points.append(Point(y, x, z))
+    mat = np.array([[13000, 0, -100],
+                    [0, 13000, -100],
+                    [0, 0, 1]])
+
+    for point in Points:
+        point.update_point((mat @ point.to_vec()) / point.z)
+        # if point.x > 999 or point.y > 999:
+        print(point)
+        point.z *= 400
+        # print(point)
+    return Points
+
+
+def task_16(H=1000, W=1000):
+    print("Отрисовка вершин трёхмерной модели")
+    points = task_16_1()
+    my_image = Image_class(H + 1, W + 1)
+    array = task_6()
+    l = [0, 0, -1]
+    z = np.full((1000, 1000), 10 ** 10)
+    # my_image.update_matrix(points)
+    for i in array:
+        triangle = []
+        for j in i:
+            triangle.append(points[j])
+        n = np.dot(task_12(triangle), l)
+        if n < 0:
+            task_9_3(triangle, my_image.matrix, n, z, l)
+    my_image.show("task_16")
+
+
+def task_16_2():
+    f = open('african_head.obj', 'r')
+    lines = f.read()
+    Points = []
+    for line in lines.split('\n'):
+        try:
+            v, x, y, z = re.split('\s+', line)
+        except:
+            continue
+        if v == 'v':
+            x = float(x) + 1
+            y = float(y) + 1
+            z = float(z) + 1
+            Points.append(Point(y, x, z))
+    mat = np.array([[10000, 0, -200],
+                    [0, 10000, 0],
+                    [0, 0, 1]])
+    R = np.array([[math.cos(math.pi / 7), 0, math.sin(math.pi / 7)], [0, 1, 0],
+                  [-math.sin(math.pi / 7), 0, math.cos(math.pi / 7)]])
+    for point in Points:
+        point.update_point((R @ point.to_vec()))
+        point.z += 20
+        point.update_point((mat @ point.to_vec()) / point.z)
+        # if point.x > 999 or point.y > 999:
+        print(point)
+        point.z *= 400
+        # print(point)
+    return Points
+
+
+def task_17(H=1000, W=1000):
+    points = task_16_2()
+    my_image = Image_class(H + 1, W + 1)
+    array = task_6()
+    l = [0, 0, -1]
+    z = np.full((1000, 1000), 10 ** 10)
+    for i in array:
+        triangle = []
+        for j in i:
+            triangle.append(points[j])
+        n = np.dot(task_12(triangle), l)
+        if n < 0:
+            task_9_3(triangle, my_image.matrix, n, z, l)
+    # my_image.update_matrix(points)
+    my_image.show("task_17")
+
+
 if __name__ == "__main__":
-    task_14()
+    task_16()
