@@ -259,6 +259,7 @@ def task_6():
     f = open('african_head.obj', 'r')
     lines = f.read()
     array = np.empty((0, 3), int)
+    array2 = np.empty((0, 3), int)
     for line in lines.split('\n'):
         try:
             f = re.split('\s+', line)[0]
@@ -266,9 +267,12 @@ def task_6():
             continue
         if f == 'f':
             row = np.array([int(elem.split('/')[0]) - 1 for elem in re.split('\s+', line[2:])])
+            row2 = np.array([int(elem.split('/')[2]) for elem in re.split('\s+', line[2:])])
+            # print(row2)
             array = np.append(array, [row], axis=0)
+            array2 = np.append(array2, [row2], axis=0)
 
-    return array
+    return array, array2
 
 
 def task_7_1(x0, x1, y0, y1, my_image):
@@ -386,13 +390,15 @@ def task_9_2(Points, matrix, n):
                 matrix[x][y] = [255 * n, 0, 0]
 
 
-def task_9_3(Points, matrix, n, z, l):
+def task_9_3(Points, matrix, n, z, l, ar):
     xmin = min(Points[0].x, Points[1].x, Points[2].x)
     xmax = max(Points[0].x, Points[1].x, Points[2].x)
     ymin = min(Points[0].y, Points[1].y, Points[2].y)
     ymax = max(Points[0].y, Points[1].y, Points[2].y)
     # print(xmin, " ", xmax," ",ymax," ",ymin)
-
+    L0 = -np.dot(ar[0], l) / np.linalg.norm(ar[0]) / np.linalg.norm(l)
+    L1 = -np.dot(ar[1], l) / np.linalg.norm(ar[1]) / np.linalg.norm(l)
+    L2 = -np.dot(ar[2], l) / np.linalg.norm(ar[2]) / np.linalg.norm(l)
     for x in range(int(xmin), int(xmax) + 1):
         for y in range(int(ymin), int(ymax) + 1):
             l1, l2, l3 = task_8(Points, x, y, False)
@@ -400,9 +406,9 @@ def task_9_3(Points, matrix, n, z, l):
                 cur_z = Points[0].z * l1 + Points[1].z * l2 + Points[2].z * l3
                 if cur_z < z[x, y]:
                     z[x, y] = cur_z
-                    n = -np.dot(task_12(Points), l)
+                    n = 255 * (l1 * L0 + l2 * L1 + l3 * L2)
                     #     # print("Подходит")
-                    matrix[1000 - x][y] = [255 * n, 0, 0]
+                    matrix[x][y] = [n, 0, 0]
 
 
 def task_11(H=1000, W=1000):
@@ -427,7 +433,7 @@ def task_12(Points):
     b = [Points[1].x - Points[2].x, Points[1].y - Points[2].y, Points[1].z - Points[2].z]
     c = a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - b[0] * a[1]
     # print(c)
-    return (c / np.linalg.norm(c))
+    return c / np.linalg.norm(c)
     # points = task_4_1()
     # for point in points:
     #     print(point)
@@ -584,5 +590,45 @@ def task_17(H=1000, W=1000):
     my_image.show("task_17")
 
 
+def task_4_3():
+    f = open('african_head.obj', 'r')
+    lines = f.read()
+    Points = []
+    norms = []
+    for line in lines.split('\n'):
+        try:
+            v, x, y, z = re.split('\s+', line)
+        except:
+            continue
+        if v == 'v':
+            x = (float(x) + 1) * 500
+            y = 1000 - (float(y) + 1) * 500
+            z = (float(z) + 1) * 400
+            Points.append(Point(y, x, z))
+        if v == "vn":
+            # print(x, y, z)
+            norms.append([float(x), float(y), float(z)])
+    return Points, norms
+
+
+def task_18(H=1000, W=1000):
+    l = [0, 0, 1]
+    my_image, points = task_5(H, W)
+    points, norms = task_4_3()
+    z = np.full((1000, 1000), 10 ** 10)
+    norms = np.array(norms)
+    array, norm_array = task_6()
+    for i in array:
+        triangle = []
+        ar = []
+        for j in i:
+            triangle.append(points[j])
+            ar.append(norms[j])
+        n = np.dot(task_12(triangle), l)
+        if n < 0:
+            task_9_3(triangle, my_image.matrix, n, z, l, ar)
+    my_image.show("task_18")
+
+
 if __name__ == "__main__":
-    task_16()
+    task_18()
