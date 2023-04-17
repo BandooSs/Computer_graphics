@@ -1,9 +1,25 @@
+import copy
 import random
 
 import numpy as np
 from PIL import Image
 import math
 import re
+
+
+def rotation_matrix(alpha, betta, gamma):
+    r1 = np.array([[1, 0, 0],
+                   [0, np.cos(alpha), np.sin(alpha)],
+                   [0, -np.sin(alpha), np.cos(alpha)]])
+
+    r2 = np.array([[np.cos(betta), 0, np.sin(betta)],
+                   [0, 1, 0],
+                   [-np.sin(betta), 0, np.cos(betta)]])
+
+    r3 = np.array([[np.cos(gamma), np.sin(gamma), 0],
+                   [-np.sin(gamma), np.cos(gamma), 0],
+                   [0, 0, 1]])
+    return r1 @ r2 @ r3
 
 
 class Point:
@@ -250,8 +266,6 @@ def task_5(H: int, W: int):
     print("Отрисовка вершин трёхмерной модели")
     points = task_4()
     my_image = Image_class(H + 1, W + 1)
-    # my_image.update_matrix(points)
-    # my_image.show()
     return my_image, points
 
 
@@ -396,9 +410,9 @@ def task_9_3(Points, matrix, n, z, l, ar):
     ymin = min(Points[0].y, Points[1].y, Points[2].y)
     ymax = max(Points[0].y, Points[1].y, Points[2].y)
     # print(xmin, " ", xmax," ",ymax," ",ymin)
-    L0 = -np.dot(ar[0], l) / np.linalg.norm(ar[0]) / np.linalg.norm(l)
-    L1 = -np.dot(ar[1], l) / np.linalg.norm(ar[1]) / np.linalg.norm(l)
-    L2 = -np.dot(ar[2], l) / np.linalg.norm(ar[2]) / np.linalg.norm(l)
+    # L0 = -np.dot(ar[0], l) / np.linalg.norm(ar[0]) / np.linalg.norm(l)
+    # L1 = -np.dot(ar[1], l) / np.linalg.norm(ar[1]) / np.linalg.norm(l)
+    # L2 = -np.dot(ar[2], l) / np.linalg.norm(ar[2]) / np.linalg.norm(l)
     for x in range(int(xmin), int(xmax) + 1):
         for y in range(int(ymin), int(ymax) + 1):
             l1, l2, l3 = task_8(Points, x, y, False)
@@ -406,9 +420,10 @@ def task_9_3(Points, matrix, n, z, l, ar):
                 cur_z = Points[0].z * l1 + Points[1].z * l2 + Points[2].z * l3
                 if cur_z < z[x, y]:
                     z[x, y] = cur_z
-                    n = 255 * (l1 * L0 + l2 * L1 + l3 * L2)
+                    # n = 255 * (l1 * L0 + l2 * L1 + l3 * L2)
                     #     # print("Подходит")
-                    matrix[x][y] = [n, 0, 0]
+                    n = -np.dot(task_12(Points), l)
+                    matrix[1000 - x][y] = [255 * n, 0, 0]
 
 
 def task_11(H=1000, W=1000):
@@ -576,7 +591,7 @@ def task_16_2():
 def task_17(H=1000, W=1000):
     points = task_16_2()
     my_image = Image_class(H + 1, W + 1)
-    array = task_6()
+    array, _ = task_6()
     l = [0, 0, -1]
     z = np.full((1000, 1000), 10 ** 10)
     for i in array:
@@ -585,7 +600,7 @@ def task_17(H=1000, W=1000):
             triangle.append(points[j])
         n = np.dot(task_12(triangle), l)
         if n < 0:
-            task_9_3(triangle, my_image.matrix, n, z, l)
+            task_9_3(triangle, my_image.matrix, n, z, l, _)
     # my_image.update_matrix(points)
     my_image.show("task_17")
 
@@ -611,6 +626,49 @@ def task_4_3():
     return Points, norms
 
 
+def task_4_4():
+    f = open('african_head.obj', 'r')
+    lines = f.read()
+    Points = []
+    norms = []
+    for line in lines.split('\n'):
+        try:
+            v, x, y, z = re.split('\s+', line)
+        except:
+            continue
+        if v == 'v':
+            x = (float(x) + 1) * 500
+            y = 1000 - (float(y) + 1) * 500
+            z = (float(z) + 1) * 400
+            Points.append(Point(y, x, z))
+        if v == "vn":
+            # print(x, y, z)
+            norms.append([float(x), float(y), float(z)])
+    return Points, norms
+
+
+def task_9_4(Points, matrix, n, z, l, ar):
+    xmin = min(Points[0].x, Points[1].x, Points[2].x)
+    xmax = max(Points[0].x, Points[1].x, Points[2].x)
+    ymin = min(Points[0].y, Points[1].y, Points[2].y)
+    ymax = max(Points[0].y, Points[1].y, Points[2].y)
+    # print(xmin, " ", xmax," ",ymax," ",ymin)
+    # L0 = -np.dot(ar[0], l) / np.linalg.norm(ar[0]) / np.linalg.norm(l)
+    # L1 = -np.dot(ar[1], l) / np.linalg.norm(ar[1]) / np.linalg.norm(l)
+    # L2 = -np.dot(ar[2], l) / np.linalg.norm(ar[2]) / np.linalg.norm(l)
+    for x in range(int(xmin), int(xmax) + 1):
+        for y in range(int(ymin), int(ymax) + 1):
+            l1, l2, l3 = task_8(Points, x, y, False)
+            if task_8(Points, x, y) and 0 <= x < 1000 and 0 <= y < 1000:
+                cur_z = Points[0].z * l1 + Points[1].z * l2 + Points[2].z * l3
+                if cur_z < z[x, y]:
+                    z[x, y] = cur_z
+                    # n = 255 * (l1 * L0 + l2 * L1 + l3 * L2)
+                    #     # print("Подходит")
+                    n = -np.dot(task_12(Points), l)
+                    matrix[x][y] = [255 * n, 0, 0]
+
+
 def task_18(H=1000, W=1000):
     l = [0, 0, 1]
     my_image, points = task_5(H, W)
@@ -626,9 +684,73 @@ def task_18(H=1000, W=1000):
             ar.append(norms[j])
         n = np.dot(task_12(triangle), l)
         if n < 0:
-            task_9_3(triangle, my_image.matrix, n, z, l, ar)
+            task_9_4(triangle, my_image.matrix, n, z, l, ar)
     my_image.show("task_18")
 
 
+def for_dop():
+    f = open('african_head.obj', 'r')
+    lines = f.read()
+    Points = []
+    for line in lines.split('\n'):
+        try:
+            v, x, y, z = re.split('\s+', line)
+        except:
+            continue
+        if v == 'v':
+            x = float(x) + 1
+            y = float(y) + 1
+            z = float(z) + 1
+            Points.append((y, x, z))
+    return Points
+
+
+def dop(H=1000, W=1000):
+    points = for_dop()
+
+    mat = np.array([[10000, 0, -200],
+                    [0, 10000, 0],
+                    [0, 0, 1]])
+
+    pi = math.pi
+    massive = np.linspace(3, 7, num=20)
+    array, _ = task_6()
+    l = [0, 0, -1]
+
+    for index in massive:
+        z = np.full((1000, 1000), 10 ** 10)
+        pointses = []
+        for p in points:
+            pointses.append(Point(p[0], p[1], p[2]))
+        for point in pointses:
+            point.update_point((rotation_matrix(0, pi / index, 0) @ point.to_vec()))
+            point.z += 20
+            point.update_point((mat @ point.to_vec()) / point.z)
+            point.z *= 400
+        my_image = Image_class(H + 1, W + 1)
+        for i in array:
+            triangle = []
+            for j in i:
+                triangle.append(pointses[j])
+            n = np.dot(task_12(triangle), l)
+            if n < 0:
+                task_9_3(triangle, my_image.matrix, n, z, l, _)
+        my_image.show("dop_" + str(index))
+
+
 if __name__ == "__main__":
-    task_18()
+    # dop()
+    massive = np.linspace(3, 7, num=20)
+    frames = []
+    for frame_number in massive:
+        frame = Image.open(f'dop_{frame_number}.jpg')
+        frames.append(frame)
+
+    frames[0].save(
+        'spinningFace.gif',
+        save_all=True,
+        append_images=frames[1:],
+        optimize=True,
+        duration=100,
+        loop=0
+    )
